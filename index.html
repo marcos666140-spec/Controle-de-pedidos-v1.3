@@ -4,21 +4,22 @@
 <head>
 
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>Pedidos</title>
 
+<link rel="manifest" href="manifest.json">
+
 <link rel="stylesheet" href="style.css">
+
+<meta name="theme-color" content="#2e7d32">
 
 </head>
 
 <body>
 
 <header>
-
-<h1>Pedidos</h1>
-
+<h1>🛒 Pedidos</h1>
 </header>
 
 <div id="tabs"></div>
@@ -45,6 +46,12 @@
 
 
 <script src="script.js"></script>
+
+<script>
+if ("serviceWorker" in navigator) {
+navigator.serviceWorker.register("service-worker.js")
+}
+</script>
 
 </body>
 </html>
