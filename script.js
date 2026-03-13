@@ -1,178 +1,165 @@
-const setoresFixos = ["Bebidas","Confeitaria","Panificação"];
-let setores = [];
-let pedidos = {}; // vai armazenar a quantidade
-let produtosFixos = {
-  "Bebidas":["Água","Refrigerante","Suco"],
-  "Confeitaria":["Bolo","Donut","Torta"],
-  "Panificação":["Pão francês","Croissant","Pão de forma"]
-};
+const setoresFixos = ["Bebidas","Confeitaria","Panificação"]
 
-// Inicialização
-function init() {
-  setores = [...setoresFixos];
-  setores.forEach(s=>{
-    pedidos[s] = {};
-    produtosFixos[s].forEach(p => pedidos[s][p] = 0); // ainda armazenamos 0
-  });
-  renderTabs();
-}
-init();
+let dados = JSON.parse(localStorage.getItem("dadosPedidos")) || {}
 
-// Renderiza abas e conteúdo
-function renderTabs() {
-  const tabs = document.getElementById("tabs");
-  tabs.innerHTML="";
-  setores.forEach(setor=>{
-    const div = document.createElement("div");
-    div.className="tab";
-    div.innerHTML=`<span>${setor}</span>`;
-    if(!setoresFixos.includes(setor)){
-      const btn = document.createElement("button");
-      btn.textContent="X";
-      btn.onclick=()=>excluirSetor(setor);
-      div.appendChild(btn);
-    }
-    tabs.appendChild(div);
-  });
-  renderConteudo();
-}
+setoresFixos.forEach(setor=>{
+if(!dados[setor]) dados[setor] = {}
+})
 
-// Renderiza produtos com quantidade editável (input em branco)
-function renderConteudo(){
-  const conteudo = document.getElementById("conteudo");
-  conteudo.innerHTML="";
-  setores.forEach(setor=>{
-    const div = document.createElement("div");
-    div.className="setor";
-    div.innerHTML=`<h3>${setor}</h3>`;
-
-    if(!produtosFixos[setor]) produtosFixos[setor] = [];
-
-    produtosFixos[setor].forEach(prod=>{
-      if(pedidos[setor][prod] === undefined) pedidos[setor][prod]=0;
-
-      const itemDiv = document.createElement("div");
-      itemDiv.className="item";
-
-      const span = document.createElement("span");
-      span.textContent = prod;
-
-      const qtdInput = document.createElement("input");
-      qtdInput.type="number";
-      qtdInput.min=0;
-      qtdInput.placeholder="0"; // input começa vazio
-      qtdInput.value = pedidos[setor][prod] || ""; // não mostra 0
-      qtdInput.style.width="60px";
-      qtdInput.onchange = () => {
-        pedidos[setor][prod] = parseInt(qtdInput.value) || 0;
-        salvar();
-      };
-
-      // Botões rápidos 1/2/3/4
-      [1,2,3,4].forEach(n=>{
-        const b = document.createElement("button");
-        b.textContent = n;
-        b.onclick = () => {
-          pedidos[setor][prod] += n;
-          qtdInput.value = pedidos[setor][prod];
-          salvar();
-        }
-        itemDiv.appendChild(b);
-      });
-
-      itemDiv.appendChild(span);
-      itemDiv.appendChild(qtdInput);
-
-      div.appendChild(itemDiv);
-    });
-
-    conteudo.appendChild(div);
-  });
-}
-
-// Novo setor
-function novoSetor(){
-  const nome = prompt("Nome do novo setor:");
-  if(!nome) return;
-  if(setores.includes(nome)) return alert("Setor já existe!");
-  setores.push(nome);
-  pedidos[nome]={};
-  produtosFixos[nome]=[]; // sem produtos pré-definidos ainda
-  salvar();
-  renderTabs();
-}
-
-// Excluir setor
-function excluirSetor(nome){
-  if(!confirm(`Deseja excluir o setor ${nome}?`)) return;
-  setores = setores.filter(s=>s!==nome);
-  delete pedidos[nome];
-  delete produtosFixos[nome];
-  salvar();
-  renderTabs();
-}
-
-// Modal finalizar pedido
-function finalizarPedido(){
-  const modal = document.getElementById("modalPedido");
-  const container = document.getElementById("modalPedidos");
-  container.innerHTML="";
-  modal.style.display="flex";
-
-  setores.forEach(setor=>{
-    const produtosSetor = Object.keys(pedidos[setor]).filter(p=>pedidos[setor][p]>0);
-    if(produtosSetor.length>0){
-      const divSetor = document.createElement("div");
-      divSetor.className="pedido-setor";
-      const h = document.createElement("h3");
-      h.textContent = `Pedido ${setor}`;
-      divSetor.appendChild(h);
-
-      produtosSetor.forEach(prod=>{
-        const p = document.createElement("p");
-        p.textContent = `${prod} - ${pedidos[setor][prod]}`;
-        divSetor.appendChild(p);
-      });
-
-      container.appendChild(divSetor);
-    }
-  });
-
-  const btnCopy = document.getElementById("copiarPedido");
-  btnCopy.onclick=()=>{
-    let texto="";
-    const setoresModal = container.querySelectorAll(".pedido-setor");
-    setoresModal.forEach(s=>{
-      texto += s.querySelector("h3").textContent + "\n";
-      s.querySelectorAll("p").forEach(p=>{
-        texto += p.textContent + "\n";
-      });
-      texto += "\n";
-    });
-    navigator.clipboard.writeText(texto);
-    alert("Pedido copiado!");
-  }
-}
-
-// Fechar modal
-function fecharModal(){
-  document.getElementById("modalPedido").style.display="none";
-}
-
-// Salvar no localStorage
 function salvar(){
-  localStorage.setItem("pedidosApp_setores",JSON.stringify(setores));
-  localStorage.setItem("pedidosApp_pedidos",JSON.stringify(pedidos));
-  localStorage.setItem("pedidosApp_produtosFixos",JSON.stringify(produtosFixos));
+localStorage.setItem("dadosPedidos",JSON.stringify(dados))
 }
 
-// Recuperar do localStorage
-window.onload=()=>{
-  const s = localStorage.getItem("pedidosApp_setores");
-  const p = localStorage.getItem("pedidosApp_pedidos");
-  const pf = localStorage.getItem("pedidosApp_produtosFixos");
-  if(s) setores = JSON.parse(s);
-  if(p) pedidos = JSON.parse(p);
-  if(pf) produtosFixos = JSON.parse(pf);
-  renderTabs();
+function render(){
+const container = document.getElementById("setores")
+container.innerHTML=""
+
+setoresFixos.forEach(setor=>{
+
+const div = document.createElement("div")
+div.className="setor"
+
+const titulo = document.createElement("div")
+titulo.className="setorTitulo"
+titulo.innerText=setor
+
+const produtosDiv = document.createElement("div")
+produtosDiv.className="produtos"
+
+titulo.onclick=()=>{
+produtosDiv.style.display =
+produtosDiv.style.display==="block"?"none":"block"
+}
+
+for(let produto in dados[setor]){
+
+const linha = document.createElement("div")
+linha.className="produto"
+
+const nome = document.createElement("span")
+nome.innerText=produto
+
+const qtd = document.createElement("input")
+qtd.type="number"
+qtd.value=dados[setor][produto]
+qtd.placeholder="0"
+
+qtd.oninput=()=>{
+dados[setor][produto]=qtd.value
+salvar()
+}
+
+const del = document.createElement("button")
+del.innerText="X"
+del.className="excluir"
+
+del.onclick=()=>{
+delete dados[setor][produto]
+salvar()
+render()
+}
+
+linha.appendChild(nome)
+linha.appendChild(qtd)
+linha.appendChild(del)
+
+produtosDiv.appendChild(linha)
+
+}
+
+const add = document.createElement("button")
+add.innerText="+ Produto"
+add.className="addProduto"
+
+add.onclick=()=>{
+const nome = prompt("Nome do produto")
+
+if(!nome) return
+
+dados[setor][nome] = ""
+salvar()
+render()
+}
+
+produtosDiv.appendChild(add)
+
+div.appendChild(titulo)
+div.appendChild(produtosDiv)
+
+container.appendChild(div)
+
+})
+
+}
+
+render()
+
+document.getElementById("finalizarBtn").onclick=()=>{
+
+const resumo = document.getElementById("pedidoFinal")
+resumo.innerHTML=""
+
+for(let setor in dados){
+
+let itens = ""
+
+for(let prod in dados[setor]){
+
+if(dados[setor][prod] && dados[setor][prod] > 0){
+
+itens += `<div>${prod} - ${dados[setor][prod]}</div>`
+
+}
+
+}
+
+if(itens){
+
+resumo.innerHTML += `
+<h3>${setor}</h3>
+${itens}
+`
+
+}
+
+}
+
+document.getElementById("modal").style.display="flex"
+
+}
+
+function fecharModal(){
+document.getElementById("modal").style.display="none"
+}
+
+function copiarPedido(){
+
+let texto=""
+
+for(let setor in dados){
+
+let itens=""
+
+for(let prod in dados[setor]){
+
+if(dados[setor][prod] && dados[setor][prod] > 0){
+
+itens += `${prod} - ${dados[setor][prod]}\n`
+
+}
+
+}
+
+if(itens){
+
+texto += `${setor}\n${itens}\n`
+
+}
+
+}
+
+navigator.clipboard.writeText(texto)
+
+alert("Pedido copiado")
+
 }
