@@ -1,30 +1,29 @@
-self.addEventListener("install",e=>{
+const CACHE = "pedidos-app-v1"
+
+const arquivos = [
+"/",
+"/index.html",
+"/style.css",
+"/script.js",
+"/manifest.json"
+]
+
+self.addEventListener("install", e => {
 
 e.waitUntil(
-
-caches.open("pedido-app").then(cache=>{
-
-return cache.addAll([
-"./",
-"./index.html",
-"./style.css",
-"./script.js"
-])
-
+caches.open(CACHE).then(cache=>{
+return cache.addAll(arquivos)
 })
-
 )
 
 })
 
-self.addEventListener("fetch",e=>{
+self.addEventListener("fetch", e=>{
 
 e.respondWith(
 
-caches.match(e.request).then(r=>{
-
-return r || fetch(e.request)
-
+caches.match(e.request).then(res=>{
+return res || fetch(e.request)
 })
 
 )
