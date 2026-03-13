@@ -5,37 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pedidos</title>
 <link rel="stylesheet" href="style.css">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2e7d32">
 </head>
+
 <body>
 
 <header>
-  <h1>🛒 Pedidos</h1>
+<h1>Pedidos</h1>
 </header>
 
-<div id="tabs"></div>
-<button class="addSetor" onclick="novoSetor()">+ Setor</button>
-<div id="conteudo"></div>
+<div id="setores"></div>
 
-<!-- Modal do pedido -->
-<div id="modalPedido">
-  <div id="modalConteudo">
-    <button class="fechar" onclick="fecharModal()">X</button>
-    <div id="modalPedidos"></div>
-    <button id="copiarPedido">Copiar Pedido</button>
-  </div>
+<button id="finalizarBtn">Finalizar Pedido</button>
+
+<div id="modal">
+<div id="modalConteudo">
+<h2>Resumo do Pedido</h2>
+<div id="pedidoFinal"></div>
+<button onclick="copiarPedido()">Copiar Pedido</button>
+<button onclick="fecharModal()">Fechar</button>
+</div>
 </div>
 
-<button class="finalizar" onclick="finalizarPedido()">
-  ✔
-</button>
-
 <script src="script.js"></script>
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js");
-}
-</script>
+
 </body>
 </html>
