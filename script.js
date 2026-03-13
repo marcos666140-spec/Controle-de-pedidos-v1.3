@@ -1,186 +1,166 @@
-const tabs=document.getElementById("tabs")
-const conteudo=document.getElementById("conteudo")
+const setoresFixos = ["Bebidas","Confeitaria","Panificação"];
+let setores = [];
+let pedidos = {};
 
-let setores=JSON.parse(localStorage.getItem("setores"))||[
-"Bebidas",
-"Confeitaria",
-"Panificação"
-]
+function init() {
+  setores = [...setoresFixos];
+  setores.forEach(s=>pedidos[s]=[]);
+  renderTabs();
+}
+init();
 
-let dados=JSON.parse(localStorage.getItem("dados"))||{}
-
-function salvar(){
-localStorage.setItem("setores",JSON.stringify(setores))
-localStorage.setItem("dados",JSON.stringify(dados))
+function renderTabs() {
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML="";
+  setores.forEach(setor=>{
+    const div = document.createElement("div");
+    div.className="tab";
+    div.innerHTML=`<span>${setor}</span>`;
+    if(!setoresFixos.includes(setor)){
+      const btn = document.createElement("button");
+      btn.textContent="X";
+      btn.onclick=()=>excluirSetor(setor);
+      div.appendChild(btn);
+    }
+    tabs.appendChild(div);
+  });
+  renderConteudo();
 }
 
-function criarTabs(){
+function renderConteudo(){
+  const conteudo = document.getElementById("conteudo");
+  conteudo.innerHTML="";
+  setores.forEach(setor=>{
+    const div = document.createElement("div");
+    div.className="setor";
+    div.innerHTML=`<h3>${setor}</h3>`;
 
-tabs.innerHTML=""
+    const inputNome = document.createElement("input");
+    inputNome.placeholder="Nome do produto";
 
-setores.forEach((nome,i)=>{
+    const quantidade = document.createElement("input");
+    quantidade.type="number";
+    quantidade.min=1;
+    quantidade.value=1;
+    quantidade.style.width="60px";
 
-let t=document.createElement("div")
-t.className="tab"
-t.innerText=nome
+    const qtdBtns = [1,2,3,4].map(n=>{
+      const b=document.createElement("button");
+      b.textContent=n;
+      b.onclick=()=>{quantidade.value = parseInt(quantidade.value)+n;};
+      return b;
+    });
 
-t.onclick=()=>abrirSetor(i)
+    const btnAdd = document.createElement("button");
+    btnAdd.textContent="Adicionar";
+    btnAdd.onclick=()=>{
+      if(!inputNome.value) return;
+      if(!pedidos[setor]) pedidos[setor]=[];
+      pedidos[setor].push({nome: inputNome.value,qtd:parseInt(quantidade.value)});
+      inputNome.value="";
+      quantidade.value=1;
+      salvar();
+      renderConteudo();
+    };
 
-tabs.appendChild(t)
+    div.appendChild(inputNome);
+    div.appendChild(quantidade);
+    qtdBtns.forEach(b=>div.appendChild(b));
+    div.appendChild(btnAdd);
 
-})
+    if(pedidos[setor]){
+      pedidos[setor].forEach((item,i)=>{
+        const itemDiv = document.createElement("div");
+        itemDiv.className="item";
+        itemDiv.textContent=`${item.nome} - ${item.qtd}`;
+        const delBtn=document.createElement("button");
+        delBtn.textContent="X";
+        delBtn.onclick=()=>{
+          pedidos[setor].splice(i,1);
+          salvar();
+          renderConteudo();
+        }
+        itemDiv.appendChild(delBtn);
+        div.appendChild(itemDiv);
+      });
+    }
 
-}
-
-function abrirSetor(i){
-
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
-tabs.children[i].classList.add("active")
-
-conteudo.innerHTML=""
-
-let setor=setores[i]
-
-if(!dados[setor]) dados[setor]=[]
-
-let div=document.createElement("div")
-div.className="setor"
-
-dados[setor].forEach(produto=>{
-div.appendChild(criarItem(setor,produto))
-})
-
-let botao=document.createElement("button")
-botao.innerText="+ Produto"
-
-botao.onclick=()=>{
-
-let nome=prompt("Nome do produto")
-
-if(!nome) return
-
-dados[setor].push({
-produto:nome,
-qtd:""
-})
-
-salvar()
-abrirSetor(i)
-
-}
-
-div.appendChild(botao)
-
-conteudo.appendChild(div)
-
-}
-
-function criarItem(setor,item){
-
-let div=document.createElement("div")
-div.className="item"
-
-let nome=document.createElement("div")
-nome.className="nomeProduto"
-nome.innerText=item.produto
-
-let qtd=document.createElement("input")
-qtd.type="number"
-qtd.placeholder="Qtd"
-qtd.value=item.qtd||""
-
-qtd.oninput=()=>{
-item.qtd=qtd.value
-salvar()
-}
-
-let botoes=document.createElement("div")
-botoes.className="botoesQtd"
-
-;[1,2,3,4].forEach(n=>{
-
-let b=document.createElement("button")
-b.innerText="+"+n
-
-b.onclick=()=>{
-
-let atual=parseInt(qtd.value)||0
-let novo=atual+n
-
-qtd.value=novo
-item.qtd=novo
-
-salvar()
-
-}
-
-botoes.appendChild(b)
-
-})
-
-div.appendChild(nome)
-div.appendChild(qtd)
-div.appendChild(botoes)
-
-return div
-
+    conteudo.appendChild(div);
+  });
 }
 
 function novoSetor(){
-
-let nome=prompt("Nome do setor")
-
-if(!nome) return
-
-setores.push(nome)
-
-salvar()
-
-criarTabs()
-
+  const nome = prompt("Nome do novo setor:");
+  if(!nome) return;
+  if(setores.includes(nome)) return alert("Setor já existe!");
+  setores.push(nome);
+  pedidos[nome]=[];
+  salvar();
+  renderTabs();
 }
 
+function excluirSetor(nome){
+  if(!confirm(`Deseja excluir o setor ${nome}?`)) return;
+  setores = setores.filter(s=>s!==nome);
+  delete pedidos[nome];
+  salvar();
+  renderTabs();
+}
+
+// Modal finalizar pedido
 function finalizarPedido(){
+  const modal = document.getElementById("modalPedido");
+  const container = document.getElementById("modalPedidos");
+  container.innerHTML="";
+  modal.style.display="flex";
 
-let texto=""
+  setores.forEach(setor=>{
+    if(pedidos[setor] && pedidos[setor].length>0){
+      const divSetor = document.createElement("div");
+      divSetor.className="pedido-setor";
+      const h = document.createElement("h3");
+      h.textContent=`Pedido ${setor}`;
+      divSetor.appendChild(h);
 
-setores.forEach(setor=>{
+      pedidos[setor].forEach(item=>{
+        const p = document.createElement("p");
+        p.textContent=`${item.nome} - ${item.qtd}`;
+        divSetor.appendChild(p);
+      });
 
-let lista=dados[setor]
+      container.appendChild(divSetor);
+    }
+  });
 
-if(!lista) return
-
-let ativos=lista.filter(p=>p.qtd)
-
-if(ativos.length==0) return
-
-texto+=setor.toUpperCase()+"\n"
-
-ativos.forEach(p=>{
-texto+=`${p.qtd} x ${p.produto}\n`
-})
-
-texto+="\n"
-
-})
-
-document.getElementById("pedidoFinal").classList.remove("hidden")
-
-document.getElementById("textoPedido").value=texto
-
+  const btnCopy = document.getElementById("copiarPedido");
+  btnCopy.onclick=()=>{
+    let texto="";
+    const setoresModal = container.querySelectorAll(".pedido-setor");
+    setoresModal.forEach(s=>{
+      texto += s.querySelector("h3").textContent + "\n";
+      s.querySelectorAll("p").forEach(p=>{
+        texto += p.textContent + "\n";
+      });
+      texto += "\n";
+    });
+    navigator.clipboard.writeText(texto);
+    alert("Pedido copiado!");
+  }
 }
 
-function copiarPedido(){
-
-let txt=document.getElementById("textoPedido")
-
-txt.select()
-
-document.execCommand("copy")
-
-alert("Pedido copiado!")
-
+function fecharModal(){
+  document.getElementById("modalPedido").style.display="none";
 }
 
-criarTabs()
-abrirSetor(0)
+function salvar(){
+  localStorage.setItem("pedidosApp_setores",JSON.stringify(setores));
+  localStorage.setItem("pedidosApp_pedidos",JSON.stringify(pedidos));
+}
+
+window.onload=()=>{
+  const s = localStorage.getItem("pedidosApp_setores");
+  const p = localStorage.getItem("pedidosApp_pedidos");
+  if(s) setores = JSON.parse(s);
+  if(p) pedidos = JSON.parse(p);
+  renderTabs();
+}
